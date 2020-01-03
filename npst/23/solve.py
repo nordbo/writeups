@@ -12,20 +12,17 @@ def window(iterable, stride=3):
 def generate_pattern(state):
     rule = {"111": '0', "110": '0', "101": '0', "000": '0',
               "100": '1', "011": '1', "010": '1', "001": '1'}
-    data = ''
+    data = []
+    
     for time in range(MAX_TIME):
-        data+=state+'\n'
+        data.append(state)
+        #fixed wrapping based on UnblvRs writeup. 
+        #https://github.com/myrdyr/ctf-writeups/blob/master/npst/julekort.py
+        state  =  state[-2:] + state + state[:2]
         patterns = window(state)
         state = ''.join(rule[pat] for pat in patterns)
-        state = '11{}00'.format(state)
-    data+=state
-    rows = data.split('\n')
-    res = []
-    i = 1
-    for r in rows:
-        res.append(r[i:-i])
-        i+=1
-    return res
+        state = state[1:-1]
+    return data
 
 
 #generer intiial state for 3 rule30 patterns, r,g og b.
@@ -37,12 +34,9 @@ for y in range(1):
 
 
 #generate three patterns, based on initial state
-(red,green,blue) = [generate_pattern('1' + init['r']+ '0'), generate_pattern('1' + init['g']+ '0'), generate_pattern('1' + init['b']+ '0')]
+(red,green,blue) = [generate_pattern(init['r']), generate_pattern(init['g']), generate_pattern(init['b'])]
 
 #go through the three plans and extract the correct bits from the image. 
-
-# note: there is an error in the creating of the pattern, probably due to wrapping of rule30, 
-#hence the whole text is not correctly decoded, but we still get the flag
 res = ''
 y=0
 for (redline, greenline, blueline) in zip(red,green,blue):
@@ -59,7 +53,4 @@ for (redline, greenline, blueline) in zip(red,green,blue):
     y+=1
 
 chars = ''.join([chr(int(res[i:i+8],2)) for i in range(0, len(res), 8)])
-flagidx = chars.index('PST{')
-flagend = chars.index('}', flagidx)
-#print(chars)
-print(chars[flagidx:flagend+1])
+print(chars)
