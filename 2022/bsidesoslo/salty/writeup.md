@@ -1,5 +1,7 @@
 # salty
 
+[solve.py](solve.py)
+
 Bug:
 We have a use after free / double free as we can free the flag without the flag pointer being deleted.
 
